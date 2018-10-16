@@ -2,39 +2,37 @@ package findMatches
 
 import (
 	"strconv"
-	"t2-invert-index-search-MedAlexey/makeInvertIndex"
+	"strings"
 )
 
-func FindMatches(phrase string, invertIndexMap map[string][]string, matches [][]string) [][]string {
+func FindMatches(phrase string, invertIndexMap map[string][]string) [][]string {
 
-	var word string
-search:
-	for true {
-		//берём очередное слово фразы
-		word, phrase = makeInvertIndex.NextWord(phrase)
+	//массив совпадений
+	var matches [][]string
 
-		//удаляем последний символ фразы (enter)
-		if word[len(word)-1] == 10 {
-			word = word[:len(word)-1]
+	sPhrase := strings.Split(phrase, " ")
+
+	for _, word := range sPhrase {
+
+		if word != "" {
+			//удаляем последний символ последнего слова (enter)
+			if word[len(word)-1] == 10 {
+				word = word[:len(word)-1]
+			}
+
+			if _, ok := invertIndexMap[word]; ok {
+				fileNames := invertIndexMap[word]
+
+				//добавляем имена файлов в слайс соответствий
+				matches = addNames(fileNames, matches)
+			}
 		}
 
-		//получаем слайс файлов, в кот-ых имеется данное слово
-		var fileNames []string
-		if _, ok := invertIndexMap[word]; ok {
-			fileNames = invertIndexMap[word]
-
-			//добавляем имена в слайс соответствий
-			matches = addNames(fileNames, matches)
-		}
-
-		if phrase == "" {
-			break search
-		}
 	}
+
 	return matches
 }
 
-// пройти по слайсу в поиске
 func addNames(fileNames []string, matches [][]string) [][]string {
 
 	for _, fileName := range fileNames {

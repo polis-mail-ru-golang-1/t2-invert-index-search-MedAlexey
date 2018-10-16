@@ -13,7 +13,7 @@ func main() {
 	arg := os.Args[1:]
 
 	if len(arg) < 2 {
-		fmt.Println("Enter files as arguments.")
+		fmt.Println("No arguments.")
 		os.Exit(1)
 	}
 
@@ -24,14 +24,11 @@ func main() {
 
 	//читаем поисковую фразу
 	var phrase string
-	fmt.Println("Enter your phrase.")
+	fmt.Println("Enter your phrase:")
 	phrase = scan()
 
-	// массив совпадений
-	matches := make([][]string, 0)
-
 	//ищем соответствия
-	matches = findMatches.FindMatches(phrase, invertIndexMap, matches)
+	matches := findMatches.FindMatches(phrase, invertIndexMap)
 
 	printMatches(matches)
 }

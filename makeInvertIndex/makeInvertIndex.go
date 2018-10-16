@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 // 13 - перенос строки; 32 - space
@@ -17,20 +18,12 @@ func MakeInvertIndexForFile(fileName string, invertIndexMap map[string][]string)
 		os.Exit(1)
 	}
 
-	sFile := string(file)
+	//разбиваем файл на слова и добавляем каждое слово в map
+	sFile := strings.Split(string(file), " ")
 
-	var word string
-mapCreating:
-	for true {
-		// берём очередное слово файла
-		word, sFile = NextWord(sFile)
-
+	for _, word := range sFile {
 		if word != "" {
 			addWordToMap(word, invertIndexMap, fileName)
-		}
-
-		if sFile == "" {
-			break mapCreating
 		}
 	}
 }
@@ -45,35 +38,4 @@ func addWordToMap(word string, invertIndexMap map[string][]string, fileName stri
 
 	invertIndexMap[word] = append(invertIndexMap[word], fileName)
 
-}
-
-// выделяем из файла первое слово и обрезаем файл
-func NextWord(file string) (string, string) {
-
-	// попускаем пробелы и переносы строк
-removeGaps:
-	for _, letter := range file {
-		if letter == 13 || letter == 32 {
-			file = file[1:]
-		} else {
-			break removeGaps
-		}
-	}
-
-	result := ""
-
-createWord:
-	for i, letter := range file {
-		if letter == 13 /* перенос строки*/ || letter == 32 /*пробел*/ {
-			break createWord
-		}
-		result = file[:i+1]
-	}
-	if len(file) > len(result) {
-		file = file[len(result):]
-	} else {
-		file = ""
-	}
-
-	return result, file
 }
