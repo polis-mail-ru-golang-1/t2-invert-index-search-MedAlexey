@@ -9,7 +9,7 @@ import (
 
 // 13 - перенос строки; 32 - space
 //построение обратного индекса файла
-func MakeInvertIndexForFile(fileName string, invertIndexMap map[string][]string) {
+func MakeInvertIndexForFile(fileName string, invertIndexMap map[string]map[string]int) {
 
 	file, err := ioutil.ReadFile(fileName)
 
@@ -22,6 +22,7 @@ func MakeInvertIndexForFile(fileName string, invertIndexMap map[string][]string)
 	sFile := strings.Split(string(file), " ")
 
 	for _, word := range sFile {
+
 		if word != "" {
 			addWordToMap(word, invertIndexMap, fileName)
 		}
@@ -29,13 +30,19 @@ func MakeInvertIndexForFile(fileName string, invertIndexMap map[string][]string)
 }
 
 //добавляем слово в map
-func addWordToMap(word string, invertIndexMap map[string][]string, fileName string) {
+func addWordToMap(word string, invertIndexMap map[string]map[string]int, fileName string) {
 
 	//если ключ не существует, создаём его
 	if _, ok := invertIndexMap[word]; !ok {
-		invertIndexMap[word] = make([]string, 0)
+		newFile := make(map[string]int)
+		newFile[fileName] = 1
+		invertIndexMap[word] = newFile
+	} else {
+
+		if _, ok := invertIndexMap[word][fileName]; !ok {
+			invertIndexMap[word][fileName] = 1
+		} else {
+			invertIndexMap[word][fileName]++
+		}
 	}
-
-	invertIndexMap[word] = append(invertIndexMap[word], fileName)
-
 }

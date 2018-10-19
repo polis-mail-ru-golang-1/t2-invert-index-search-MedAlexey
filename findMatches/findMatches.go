@@ -5,75 +5,60 @@ import (
 	"strings"
 )
 
-func FindMatches(phrase string, invertIndexMap map[string][]string) [][]string {
+func FindMatches(phrase string, invertIndexMap map[string]map[string]int, fileNames []string) ([][]string, [][]string) {
 
-	//массив совпадений
-	var matches [][]string
+	// слайс файлов, в которых фраза существует полностью
+	var fullMatches [][]string
+	//слайс файлов, в которых фраза существует не полностью
+	var notFullMaches [][]string
 
 	sPhrase := strings.Split(phrase, " ")
 
-	for _, word := range sPhrase {
-
-		if word != "" {
-			//удаляем последний символ последнего слова (enter)
-			if word[len(word)-1] == 10 {
-				word = word[:len(word)-1]
-			}
-
-			if _, ok := invertIndexMap[word]; ok {
-				fileNames := invertIndexMap[word]
-
-				//добавляем имена файлов в слайс соответствий
-				matches = addNames(fileNames, matches)
-			}
-		}
-
-	}
-
-	return matches
-}
-
-func addNames(fileNames []string, matches [][]string) [][]string {
-
 	for _, fileName := range fileNames {
-		fileNameExistInMatches := false
-	addFileName:
-		for i, name := range matches {
+		fullPhrase := true
+		numbOfMatches := 0
 
-			if len(name) > 0 && fileName == name[0] {
-				numOfMatches, _ := strconv.Atoi(name[1])
-				numOfMatches += 1
-				name[1] = strconv.Itoa(numOfMatches)
-				shiftElement(&matches, i)
-				fileNameExistInMatches = true
-				break addFileName
+		for _, word := range sPhrase {
+
+			word = strings.TrimSpace(word)
+
+			if word != "" {
+				if _, ok := invertIndexMap[word][fileName]; !ok {
+					fullPhrase = false
+				} else {
+					numbOfMatches += invertIndexMap[word][fileName]
+				}
 			}
 		}
 
-		//если имя файла нет в массиве совпадений, то добавляем его
-		if !fileNameExistInMatches {
-			tmp := make([]string, 0)
-			tmp = append(tmp, fileName)
-			tmp = append(tmp, "1")
-			matches = append(matches, tmp)
+		if numbOfMatches != 0 {
+			addedFile := make([]string, 0)
+			addedFile = append(addedFile, fileName)
+			addedFile = append(addedFile, strconv.Itoa(numbOfMatches))
+			if fullPhrase {
+				fullMatches = append(fullMatches, addedFile)
+				fullMatches = shiftLastElement(fullMatches)
+			} else {
+				notFullMaches = append(notFullMaches, addedFile)
+				notFullMaches = shiftLastElement(notFullMaches)
+			}
+		}
+	}
+
+	return fullMatches, notFullMaches
+}
+
+// перемещаем новый (последний) элемент слайса ближе к началу
+// ( сортируем элементы по числу совпадений: от большего к меньшему)
+func shiftLastElement(matches [][]string) [][]string {
+
+	for i := len(matches) - 1; i > 0; i-- {
+		curElementMatches, _ := strconv.Atoi(matches[i][1])
+		nextElementMatches, _ := strconv.Atoi(matches[i-1][1])
+		if curElementMatches > nextElementMatches {
+			matches[i], matches[i-1] = matches[i-1], matches[i]
 		}
 	}
 
 	return matches
-}
-
-// перемещаем элемент слайса, в котором увеличилось число совпадений, ближе к началу
-// ( сортируем элементы по числу совпадений: от большего к меньшему)
-func shiftElement(matches *[][]string, startI int) {
-	tmp := (*matches)[startI]
-	tmpMatches, _ := strconv.Atoi(tmp[1])
-
-	for i := startI - 1; i > -1; i-- {
-		curElementMatches, _ := strconv.Atoi((*matches)[i][1])
-		if curElementMatches < tmpMatches {
-			(*matches)[i+1] = (*matches)[i]
-			(*matches)[i] = tmp
-		}
-	}
-
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	invertIndexMap := make(map[string][]string)
+
 	arg := os.Args[1:]
 
 	if len(arg) < 2 {
@@ -17,28 +17,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	//создаём инвертированный индекс для файлов
+	invertIndexMap := make(map[string]map[string]int)
 	for _, fileName := range arg {
 		makeInvertIndex.MakeInvertIndexForFile(fileName, invertIndexMap)
 	}
 
-	//читаем поисковую фразу
 	var phrase string
 	fmt.Println("Enter your phrase:")
 	phrase = scan()
+	fullMatches, notFullMatches := findMatches.FindMatches(phrase, invertIndexMap, arg)
 
-	//ищем соответствия
-	matches := findMatches.FindMatches(phrase, invertIndexMap)
-
-	printMatches(matches)
+	//printMatches(fullMatches, notFullMatches)
+	printMatches(fullMatches, "Файлы, в которых фраза присутствует полностью:")
+	printMatches(notFullMatches, "Файлы, в которых фраза присутствует не полностью:")
 }
 
-func printMatches(matches [][]string) {
-	for i := range matches {
-		fmt.Println("-", matches[i][0], ";", "совпадений -", matches[i][1])
+func printMatches(matches [][]string, message string) {
+
+	if len(matches) != 0 {
+		fmt.Println(message)
+		for _, file := range matches {
+			fmt.Println("-", file[0], ";", "совпадений -", file[1])
+		}
 	}
 }
 
+// чтение фразы из stdin
 func scan() string {
 	in := bufio.NewReader(os.Stdin)
 	str, err := in.ReadString('\n')
