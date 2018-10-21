@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/findMatches"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/makeInvertIndex"
 	"os"
-	"t2-invert-index-search-MedAlexey/findMatches"
-	"t2-invert-index-search-MedAlexey/makeInvertIndex"
 )
 
 func main() {
@@ -27,7 +27,6 @@ func main() {
 	phrase = scan()
 	fullMatches, notFullMatches := findMatches.FindMatches(phrase, invertIndexMap, arg)
 
-	//printMatches(fullMatches, notFullMatches)
 	printMatches(fullMatches, "Файлы, в которых фраза присутствует полностью:")
 	printMatches(notFullMatches, "Файлы, в которых фраза присутствует не полностью:")
 }

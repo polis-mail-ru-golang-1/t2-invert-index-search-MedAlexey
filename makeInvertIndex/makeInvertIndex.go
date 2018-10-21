@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// 13 - перенос строки; 32 - space
 //построение обратного индекса файла
 func MakeInvertIndexForFile(fileName string, invertIndexMap map[string]map[string]int) {
 
