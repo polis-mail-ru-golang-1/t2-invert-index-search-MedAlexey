@@ -3,49 +3,64 @@ package findMatches
 import (
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func FindMatches(phrase string, invertIndexMap map[string]map[string]int, fileNames []string) ([][]string, [][]string) {
 
+	mutex := &sync.Mutex{}
+	wg := &sync.WaitGroup{}
+
 	// слайс файлов, в которых фраза существует полностью
 	var fullMatches [][]string
 	//слайс файлов, в которых фраза существует не полностью
-	var notFullMaches [][]string
+	var notFullMatches [][]string
 
 	sPhrase := strings.Split(phrase, " ")
 
 	for _, fileName := range fileNames {
-		fullPhrase := true
-		numbOfMatches := 0
 
-		for _, word := range sPhrase {
+		wg.Add(1)
+		go func(fullMatches *[][]string, notFullMatches *[][]string, sPhrase []string, fileName string, wg *sync.WaitGroup) {
 
-			word = strings.TrimSpace(word)
+			defer wg.Done()
+			fullPhrase := true
+			numbOfMatches := 0
 
-			if word != "" {
-				if _, ok := invertIndexMap[word][fileName]; !ok {
-					fullPhrase = false
-				} else {
-					numbOfMatches += invertIndexMap[word][fileName]
+			for _, word := range sPhrase {
+
+				word = strings.TrimSpace(word)
+
+				if word != "" {
+					if _, ok := invertIndexMap[word][fileName]; !ok {
+						fullPhrase = false
+					} else {
+						numbOfMatches += invertIndexMap[word][fileName]
+					}
 				}
 			}
-		}
 
-		if numbOfMatches != 0 {
-			addedFile := make([]string, 0)
-			addedFile = append(addedFile, fileName)
-			addedFile = append(addedFile, strconv.Itoa(numbOfMatches))
-			if fullPhrase {
-				fullMatches = append(fullMatches, addedFile)
-				fullMatches = shiftLastElement(fullMatches)
-			} else {
-				notFullMaches = append(notFullMaches, addedFile)
-				notFullMaches = shiftLastElement(notFullMaches)
+			if numbOfMatches != 0 {
+				addedFile := make([]string, 0)
+				addedFile = append(addedFile, fileName)
+				addedFile = append(addedFile, strconv.Itoa(numbOfMatches))
+				if fullPhrase {
+					mutex.Lock()
+					*fullMatches = append(*fullMatches, addedFile)
+					*fullMatches = shiftLastElement(*fullMatches)
+					mutex.Unlock()
+				} else {
+					mutex.Lock()
+					*notFullMatches = append(*notFullMatches, addedFile)
+					*notFullMatches = shiftLastElement(*notFullMatches)
+					mutex.Unlock()
+				}
 			}
-		}
+		}(&fullMatches, &notFullMatches, sPhrase, fileName, wg)
 	}
 
-	return fullMatches, notFullMaches
+	wg.Wait()
+	return fullMatches, notFullMatches
 }
 
 // перемещаем новый (последний) элемент слайса ближе к началу

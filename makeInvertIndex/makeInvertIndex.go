@@ -8,8 +8,8 @@ import (
 )
 
 //построение обратного индекса файла
-func MakeInvertIndexForFile(fileName string, invertIndexMap map[string]map[string]int) {
-
+func MakeInvertIndexForFile(fileName string) map[string]map[string]int {
+	invertIndexMap := make(map[string]map[string]int)
 	file, err := ioutil.ReadFile(fileName)
 
 	if err != nil {
@@ -26,6 +26,8 @@ func MakeInvertIndexForFile(fileName string, invertIndexMap map[string]map[strin
 			addWordToMap(word, invertIndexMap, fileName)
 		}
 	}
+
+	return invertIndexMap
 }
 
 //добавляем слово в map
