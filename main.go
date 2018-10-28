@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/findMatches"
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/makeInvertIndex"
+	"io/ioutil"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -13,7 +15,7 @@ func main() {
 
 	invertIndexMap := make(map[string]map[string]int)
 	wg := &sync.WaitGroup{}
-	mutex := &sync.Mutex{}
+	mutex := &sync.RWMutex{}
 
 	arg := os.Args[1:]
 
@@ -25,24 +27,23 @@ func main() {
 	for _, fileName := range arg {
 
 		wg.Add(1)
-		go func(invertIndexMap map[string]map[string]int, fileName string, wg *sync.WaitGroup, mutex *sync.Mutex) {
+		go func(invertIndexMap map[string]map[string]int, fileName string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			indexMap := makeInvertIndex.MakeInvertIndexForFile(fileName)
 
-			for key, value := range indexMap {
-				if _, ok := invertIndexMap[key]; !ok {
-					mutex.Lock()
-					invertIndexMap[key] = value
-					mutex.Unlock()
-				} else {
-					for key1, value1 := range indexMap[key] {
-						mutex.Lock()
-						invertIndexMap[key][key1] = value1
-						mutex.Unlock()
-					}
-				}
+			file, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				fmt.Print("Error opening file " + "\"" + fileName + "\"\n")
+				os.Exit(1)
 			}
-		}(invertIndexMap, fileName, wg, mutex)
+
+			//TODO переводить в нижний регистр и убирать с боков всё, что не буква
+			sFile := strings.Split(string(file), " ")
+
+			indexMap := makeInvertIndex.MakeInvertIndexForFile(sFile, fileName)
+
+			makeInvertIndex.AddFileIndexToMain(invertIndexMap, indexMap, mutex)
+
+		}(invertIndexMap, fileName, wg)
 	}
 
 	wg.Wait()

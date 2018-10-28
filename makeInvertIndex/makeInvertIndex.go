@@ -1,26 +1,15 @@
 package makeInvertIndex
 
-import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"strings"
-)
+import "sync"
+
+type Index map[string]map[string]int
 
 //построение обратного индекса файла
-func MakeInvertIndexForFile(fileName string) map[string]map[string]int {
-	invertIndexMap := make(map[string]map[string]int)
-	file, err := ioutil.ReadFile(fileName)
+func MakeInvertIndexForFile(words []string, fileName string) Index {
 
-	if err != nil {
-		fmt.Print("Error opening file " + "\"" + fileName + "\"\n")
-		os.Exit(1)
-	}
+	invertIndexMap := make(Index)
 
-	//разбиваем файл на слова и добавляем каждое слово в map
-	sFile := strings.Split(string(file), " ")
-
-	for _, word := range sFile {
+	for _, word := range words {
 
 		if word != "" {
 			addWordToMap(word, invertIndexMap, fileName)
@@ -31,7 +20,7 @@ func MakeInvertIndexForFile(fileName string) map[string]map[string]int {
 }
 
 //добавляем слово в map
-func addWordToMap(word string, invertIndexMap map[string]map[string]int, fileName string) {
+func addWordToMap(word string, invertIndexMap Index, fileName string) {
 
 	//если ключ не существует, создаём его
 	if _, ok := invertIndexMap[word]; !ok {
@@ -44,6 +33,27 @@ func addWordToMap(word string, invertIndexMap map[string]map[string]int, fileNam
 			invertIndexMap[word][fileName] = 1
 		} else {
 			invertIndexMap[word][fileName]++
+		}
+	}
+}
+
+//добавление индекса одного файла в общий индекс
+func AddFileIndexToMain(mainIndex Index, fileIndex Index, mutex *sync.RWMutex) {
+
+	for key, value := range fileIndex {
+		mutex.RLock()
+		if _, ok := mainIndex[key]; !ok {
+			mutex.RUnlock()
+			mutex.Lock()
+			mainIndex[key] = value
+			mutex.Unlock()
+		} else {
+			for key1, value1 := range fileIndex[key] {
+				mutex.RUnlock()
+				mutex.Lock()
+				mainIndex[key][key1] = value1
+				mutex.Unlock()
+			}
 		}
 	}
 }
