@@ -5,10 +5,17 @@ import (
 	"fmt"
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/findMatches"
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/makeInvertIndex"
+	"io/ioutil"
 	"os"
+	"strings"
+	"sync"
 )
 
 func main() {
+
+	invertIndexMap := make(map[string]map[string]int)
+	wg := &sync.WaitGroup{}
+	mutex := &sync.RWMutex{}
 
 	arg := os.Args[1:]
 
@@ -17,10 +24,29 @@ func main() {
 		os.Exit(1)
 	}
 
-	invertIndexMap := make(map[string]map[string]int)
 	for _, fileName := range arg {
-		makeInvertIndex.MakeInvertIndexForFile(fileName, invertIndexMap)
+
+		wg.Add(1)
+		go func(invertIndexMap map[string]map[string]int, fileName string, wg *sync.WaitGroup) {
+			defer wg.Done()
+
+			file, err := ioutil.ReadFile(fileName)
+			if err != nil {
+				fmt.Print("Error opening file " + "\"" + fileName + "\"\n")
+				os.Exit(1)
+			}
+
+			//TODO переводить в нижний регистр и убирать с боков всё, что не буква
+			sFile := strings.Split(string(file), " ")
+
+			indexMap := makeInvertIndex.MakeInvertIndexForFile(sFile, fileName)
+
+			makeInvertIndex.AddFileIndexToMain(invertIndexMap, indexMap, mutex)
+
+		}(invertIndexMap, fileName, wg)
 	}
+
+	wg.Wait()
 
 	var phrase string
 	fmt.Println("Enter your phrase:")
