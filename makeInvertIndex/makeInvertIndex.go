@@ -1,15 +1,21 @@
 package makeInvertIndex
 
-import "sync"
+import (
+	"strings"
+	"sync"
+)
 
 type Index map[string]map[string]int
 
 //построение обратного индекса файла
-func MakeInvertIndexForFile(words []string, fileName string) Index {
+func MakeInvertIndexForFile(file string, fileName string) Index {
 
 	invertIndexMap := make(Index)
+	words := strings.Split(string(file), " ")
 
 	for _, word := range words {
+
+		word = trimWord(word)
 
 		if word != "" {
 			addWordToMap(word, invertIndexMap, fileName)
@@ -17,6 +23,16 @@ func MakeInvertIndexForFile(words []string, fileName string) Index {
 	}
 
 	return invertIndexMap
+}
+
+func trimWord(word string) string {
+
+	word = strings.ToLower(word)
+	word = strings.TrimFunc(word, func(r rune) bool {
+		return (r >= 0 && r <= 64) || (r >= 91 && r <= 96) || (r >= 123)
+	})
+
+	return word
 }
 
 //добавляем слово в map
