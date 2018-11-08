@@ -30,6 +30,7 @@ func FindMatches(phrase string, invertIndexMap map[string]map[string]int, fileNa
 			for _, word := range sPhrase {
 
 				word = strings.TrimSpace(word)
+				word = strings.ToLower(word)
 
 				if word != "" {
 					if _, ok := invertIndexMap[word][fileName]; !ok {
