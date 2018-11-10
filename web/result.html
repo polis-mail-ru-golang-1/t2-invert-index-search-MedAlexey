@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Result</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+          rel="stylesheet">
+</head>
+<body style="min-width: 1080px">
+    <div style="text-align: center; margin-top: 350px" >
+        <form action="/web/result.html" method="post">
+            <input type="text" name="phrase" placeholder="Enter your phrase">
+            <button type="submit"  style="height: 22px; width: 22px; position: absolute; padding: 0">
+                <i class="material-icons" style="font-size: 18px">search</i>
+            </button>
+        </form>
+    </div>
+    <div style="text-align: center">
+        {{if .FullIsNotEmpty}}
+            <br><b>Файлы, в которых фраза присутствует полностью:</b><br>
+            {{range .FullMatch}}
+                <i>- {{.File}}; совпадений - {{.Number}}</i><br>
+            {{end}}
+        {{end}}
+        {{if .NotFullIsNotEmpty}}
+            <br><b>Файлы, в которых фраза присутствует не полностью:</b><br>
+            {{range .NotFullMatch}}
+                <i>- {{.File}}; совпадений - {{.Number}}<br></i>
+            {{end}}
+        {{end}}
+    </div>
+</body>
+</html>

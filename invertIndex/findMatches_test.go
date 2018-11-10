@@ -1,10 +1,8 @@
-package findMatches
+package invertIndex
 
 import (
 	"testing"
 )
-
-type Index = map[string]map[string]int
 
 func TestFindMatches(t *testing.T) {
 

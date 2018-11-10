@@ -1,4 +1,4 @@
-package findMatches
+package invertIndex
 
 import (
 	"strconv"
@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-func FindMatches(phrase string, invertIndexMap map[string]map[string]int, fileNames []string) ([][]string, [][]string) {
+func FindMatches(phrase string, invertIndexMap Index, fileNames []string) ([][]string, [][]string) {
 
 	mutex := &sync.Mutex{}
 	wg := &sync.WaitGroup{}

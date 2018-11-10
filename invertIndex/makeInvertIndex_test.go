@@ -1,4 +1,4 @@
-package makeInvertIndex
+package invertIndex
 
 import (
 	"sync"

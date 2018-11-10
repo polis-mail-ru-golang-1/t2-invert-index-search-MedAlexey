@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/findMatches"
-	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/makeInvertIndex"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/invertIndex"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/web"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -46,9 +46,9 @@ func main() {
 				os.Exit(1)
 			}
 
-			indexMap := makeInvertIndex.MakeInvertIndexForFile(string(file), fileName)
+			indexMap := invertIndex.MakeInvertIndexForFile(string(file), fileName)
 
-			makeInvertIndex.AddFileIndexToMain(invertIndexMap, indexMap, mutex)
+			invertIndex.AddFileIndexToMain(invertIndexMap, indexMap, mutex)
 
 		}(invertIndexMap, fileName, wg)
 
@@ -56,29 +56,12 @@ func main() {
 
 	wg.Wait()
 
-	http.HandleFunc("/", inputForm)
+	web.InvertIndexMap = invertIndexMap
+	web.SliceOfNames = sliceOfNames
+
+	http.HandleFunc("/", web.SearchPage)
+	http.HandleFunc("/result", web.ResultPage)
 	http.ListenAndServe(":"+strconv.Itoa(portNumber), nil)
-}
-
-func inputForm(w http.ResponseWriter, r *http.Request) {
-	phrase := r.URL.Query().Get("phrase")
-	if phrase != "" {
-
-		fullMatches, notFullMatches := findMatches.FindMatches(phrase, invertIndexMap, sliceOfNames)
-
-		printMatches(fullMatches, "Файлы, в которых фраза присутствует полностью:", w)
-		printMatches(notFullMatches, "Файлы, в которых фраза присутствует не полностью:", w)
-	}
-}
-
-func printMatches(matches [][]string, message string, w http.ResponseWriter) {
-
-	if len(matches) != 0 {
-		fmt.Fprintln(w, message)
-		for _, file := range matches {
-			fmt.Fprintln(w, "-", file[0], ";", "совпадений -", file[1])
-		}
-	}
 }
 
 func getPortNumberFromArg(arg string) int {
