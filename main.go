@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/config"
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/invertIndex"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/logger"
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/web"
 	"io/ioutil"
 	"log"
@@ -11,38 +13,39 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
-	invertIndexMap = make(map[string]map[string]int)
+	invertIndexMap = make(invertIndex.Index)
 	sliceOfNames   []string
 	portNumber     int
 )
 
 func main() {
 
+	logger.StartTime = time.Now()
+
 	wg := &sync.WaitGroup{}
 	mutex := &sync.RWMutex{}
 
-	arg := os.Args[1:]
+	configuration := config.Load()
 
-	if len(arg) != 2 {
-		fmt.Println("Wrong number of arguments.")
-		os.Exit(1)
-	}
+	portNumber = getPortNumberFromString(configuration.Port)
+	sliceOfNames = getFilesFromDir(configuration.Dir)
+	directoryOfFiles := configuration.Dir
 
-	portNumber = getPortNumberFromArg(arg[1])
-	sliceOfNames = getFilesFromArg(arg[0])
+	logger.PrintLog("Starting server at " + strconv.Itoa(portNumber))
 
 	for _, fileName := range sliceOfNames {
 
 		wg.Add(1)
-		go func(invertIndexMap map[string]map[string]int, fileName string, wg *sync.WaitGroup) {
+		go func(invertIndexMap invertIndex.Index, fileName string, wg *sync.WaitGroup) {
 			defer wg.Done()
 
-			file, err := ioutil.ReadFile(arg[0] + "/" + fileName)
+			file, err := ioutil.ReadFile(directoryOfFiles + "/" + fileName)
 			if err != nil {
-				fmt.Print("Error opening file " + "\"" + arg[0] + fileName + "\"\n")
+				fmt.Print("Error opening file " + "\"" + directoryOfFiles + fileName + "\"\n")
 				os.Exit(1)
 			}
 
@@ -64,7 +67,7 @@ func main() {
 	http.ListenAndServe(":"+strconv.Itoa(portNumber), nil)
 }
 
-func getPortNumberFromArg(arg string) int {
+func getPortNumberFromString(arg string) int {
 
 	arg = strings.TrimLeft(arg, ":")
 	number, err := strconv.Atoi(arg)
@@ -77,7 +80,7 @@ func getPortNumberFromArg(arg string) int {
 }
 
 // выделение имён файлов в заданной директории в слайс
-func getFilesFromArg(dir string) []string {
+func getFilesFromDir(dir string) []string {
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {

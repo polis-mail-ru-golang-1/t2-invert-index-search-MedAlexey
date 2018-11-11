@@ -2,12 +2,13 @@ package web
 
 import (
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/invertIndex"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/logger"
 	"html/template"
 	"net/http"
 	"strconv"
 )
 
-var InvertIndexMap map[string]map[string]int
+var InvertIndexMap invertIndex.Index
 var SliceOfNames []string
 
 type Match struct {
@@ -15,22 +16,28 @@ type Match struct {
 	Number int
 }
 
+var resultTemplate = template.Must(template.ParseFiles("web/layout.html", "web/result.html"))
+
 func ResultPage(w http.ResponseWriter, r *http.Request) {
+
+	logger.PrintLog("LOG [" + r.Method + "]" + " " + r.RemoteAddr + " " + r.URL.Path + " " + r.URL.Query().Get("phrase"))
+
 	phrase := r.URL.Query().Get("phrase")
 
 	sFullMatches, sNotFullMatches := invertIndex.FindMatches(phrase, InvertIndexMap, SliceOfNames)
 	fullMatches, notFullMatches := convertMatchesToStruct(sFullMatches, sNotFullMatches)
 
-	tpl := template.Must(template.ParseFiles("web/result.html"))
-	tpl.Execute(w, struct {
-		FullIsNotEmpty    bool
-		FullMatch         []Match
-		NotFullIsNotEmpty bool
-		NotFullMatch      []Match
+	resultTemplate.ExecuteTemplate(w, "layout", struct {
+		Title          string
+		FullIsEmpty    bool
+		FullMatch      []Match
+		NotFullIsEmpty bool
+		NotFullMatch   []Match
 	}{
-		!isEmpty(fullMatches),
+		"Result",
+		isEmpty(fullMatches),
 		fullMatches,
-		!isEmpty(notFullMatches),
+		isEmpty(notFullMatches),
 		notFullMatches,
 	})
 }
