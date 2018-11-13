@@ -1,5 +1,0 @@
-{
-  "Port"  : ":8080",
-  "Dir" : "C:/Users/new/go/src/github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/books",
-  "LogFileDir"  : "logger/"
-}

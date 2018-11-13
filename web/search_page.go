@@ -1,16 +1,18 @@
 package web
 
 import (
-	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/logger"
+	"github.com/rs/zerolog"
 	"html/template"
 	"net/http"
 )
+
+var PageLogger zerolog.Logger
 
 var searchTemplate = template.Must(template.ParseFiles("web/layout.html", "web/search.html"))
 
 func SearchPage(w http.ResponseWriter, r *http.Request) {
 
-	logger.PrintLog("LOG [" + r.Method + "]" + " " + r.RemoteAddr + " " + r.URL.Path + " " + r.URL.Query().Get("phrase"))
+	printLog(r)
 
 	phrase := r.FormValue("phrase")
 	if phrase != "" {
@@ -22,4 +24,13 @@ func SearchPage(w http.ResponseWriter, r *http.Request) {
 	}{
 		"Search",
 	})
+}
+
+func printLog(r *http.Request) {
+	PageLogger.Debug().
+		Str("method", r.Method).
+		Str("remote", r.RemoteAddr).
+		Str("path", r.URL.Path).
+		Str("phrase", r.URL.Query().Get("phrase")).
+		Msgf("Called url %s", r.URL.Path)
 }

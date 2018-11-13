@@ -7,23 +7,24 @@ import (
 )
 
 type Config struct {
-	Port       string
-	Dir        string
-	LogFileDir string
+	Listen string
+	Dir    string
 }
 
-func Load() Config {
+var Configuration Config
 
-	file, err := os.Open("config/config")
+func Load(fileName string) {
+
+	file, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println("Error opening configuration file:", err)
+		os.Exit(1)
 	}
 	decoder := json.NewDecoder(file)
-	configuration := Config{}
-	err = decoder.Decode(&configuration)
+	err = decoder.Decode(&Configuration)
 	if err != nil {
 		fmt.Println("Error decoding configuration file:", err)
+		os.Exit(1)
 	}
 
-	return configuration
 }

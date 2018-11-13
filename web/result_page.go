@@ -2,7 +2,6 @@ package web
 
 import (
 	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/invertIndex"
-	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/logger"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -20,7 +19,7 @@ var resultTemplate = template.Must(template.ParseFiles("web/layout.html", "web/r
 
 func ResultPage(w http.ResponseWriter, r *http.Request) {
 
-	logger.PrintLog("LOG [" + r.Method + "]" + " " + r.RemoteAddr + " " + r.URL.Path + " " + r.URL.Query().Get("phrase"))
+	printLog(r)
 
 	phrase := r.URL.Query().Get("phrase")
 
