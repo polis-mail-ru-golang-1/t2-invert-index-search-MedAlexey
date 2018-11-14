@@ -1,0 +1,16 @@
+{{define "content" }}
+    <div style="text-align: center">
+        {{if not .FullIsEmpty}}
+            <br><b>Файлы, в которых фраза присутствует полностью:</b><br>
+            {{range .FullMatch}}
+                <i>- {{.File}}; совпадений - {{.Number}}</i><br>
+            {{end}}
+        {{end}}
+        {{if not .NotFullIsEmpty}}
+            <br><b>Файлы, в которых фраза присутствует не полностью:</b><br>
+            {{range .NotFullMatch}}
+                <i>- {{.File}}; совпадений - {{.Number}}<br></i>
+            {{end}}
+        {{end}}
+    </div>
+{{end}}

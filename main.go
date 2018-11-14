@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/findMatches"
-	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/makeInvertIndex"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/config"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/invertIndex"
+	"github.com/polis-mail-ru-golang-1/t2-invert-index-search-MedAlexey/web"
+	"github.com/rs/zerolog"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,41 +16,56 @@ import (
 )
 
 var (
-	invertIndexMap = make(map[string]map[string]int)
+	invertIndexMap = make(invertIndex.Index)
 	sliceOfNames   []string
 	portNumber     int
 )
 
 func main() {
 
-	wg := &sync.WaitGroup{}
-	mutex := &sync.RWMutex{}
+	logFile, err := os.OpenFile("logFile", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("Error opening logFile: %v", err)
+		os.Exit(1)
+	}
+	defer logFile.Close()
+	mainLogger := zerolog.New(logFile).With().Timestamp().Logger()
+	web.PageLogger = mainLogger
 
 	arg := os.Args[1:]
 
-	if len(arg) != 2 {
-		fmt.Println("Wrong number of arguments.")
+	if len(arg) < 1 {
+		fmt.Println("No arguments.")
 		os.Exit(1)
 	}
 
-	portNumber = getPortNumberFromArg(arg[1])
-	sliceOfNames = getFilesFromArg(arg[0])
+	wg := &sync.WaitGroup{}
+	mutex := &sync.RWMutex{}
+
+	config.Load(arg[0])
+	configuration := config.Configuration
+
+	portNumber = getPortNumberFromString(configuration.Listen)
+	sliceOfNames = getFilesFromDir(configuration.Dir)
+	directoryOfFiles := configuration.Dir
+
+	mainLogger.Info().Msgf("Server starting at :%s", strconv.Itoa(portNumber))
 
 	for _, fileName := range sliceOfNames {
 
 		wg.Add(1)
-		go func(invertIndexMap map[string]map[string]int, fileName string, wg *sync.WaitGroup) {
+		go func(invertIndexMap invertIndex.Index, fileName string, wg *sync.WaitGroup) {
 			defer wg.Done()
 
-			file, err := ioutil.ReadFile(arg[0] + "/" + fileName)
+			file, err := ioutil.ReadFile(directoryOfFiles + "/" + fileName)
 			if err != nil {
-				fmt.Print("Error opening file " + "\"" + arg[0] + fileName + "\"\n")
+				fmt.Print("Error opening file " + "\"" + directoryOfFiles + fileName + "\"\n")
 				os.Exit(1)
 			}
 
-			indexMap := makeInvertIndex.MakeInvertIndexForFile(string(file), fileName)
+			indexMap := invertIndex.MakeInvertIndexForFile(string(file), fileName)
 
-			makeInvertIndex.AddFileIndexToMain(invertIndexMap, indexMap, mutex)
+			invertIndex.AddFileIndexToMain(invertIndexMap, indexMap, mutex)
 
 		}(invertIndexMap, fileName, wg)
 
@@ -56,37 +73,20 @@ func main() {
 
 	wg.Wait()
 
-	http.HandleFunc("/", inputForm)
+	web.InvertIndexMap = invertIndexMap
+	web.SliceOfNames = sliceOfNames
+
+	http.HandleFunc("/", web.SearchPage)
+	http.HandleFunc("/result", web.ResultPage)
 	http.ListenAndServe(":"+strconv.Itoa(portNumber), nil)
 }
 
-func inputForm(w http.ResponseWriter, r *http.Request) {
-	phrase := r.URL.Query().Get("phrase")
-	if phrase != "" {
-
-		fullMatches, notFullMatches := findMatches.FindMatches(phrase, invertIndexMap, sliceOfNames)
-
-		printMatches(fullMatches, "Файлы, в которых фраза присутствует полностью:", w)
-		printMatches(notFullMatches, "Файлы, в которых фраза присутствует не полностью:", w)
-	}
-}
-
-func printMatches(matches [][]string, message string, w http.ResponseWriter) {
-
-	if len(matches) != 0 {
-		fmt.Fprintln(w, message)
-		for _, file := range matches {
-			fmt.Fprintln(w, "-", file[0], ";", "совпадений -", file[1])
-		}
-	}
-}
-
-func getPortNumberFromArg(arg string) int {
+func getPortNumberFromString(arg string) int {
 
 	arg = strings.TrimLeft(arg, ":")
 	number, err := strconv.Atoi(arg)
 	if err != nil {
-		fmt.Println("Wrong port nubmer: " + "\"" + arg + "\"")
+		fmt.Println("Wrong listen nubmer: " + "\"" + arg + "\"")
 		os.Exit(2)
 	}
 
@@ -94,7 +94,7 @@ func getPortNumberFromArg(arg string) int {
 }
 
 // выделение имён файлов в заданной директории в слайс
-func getFilesFromArg(dir string) []string {
+func getFilesFromDir(dir string) []string {
 
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
